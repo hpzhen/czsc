@@ -11,7 +11,7 @@ import traceback
 import pandas as pd
 import numpy as np
 from tqdm import tqdm_notebook as tqdm
-from czsc.analyze import KlineAnalyze
+from czsc.analyze import KlineAnalyze, check_bei_chi
 # 导入 Tushare 数据（推荐使用）
 from czsc.data.ts import *
 
@@ -73,7 +73,7 @@ def selector(symbols: List):
     res = []
     for symbol in tqdm(symbols, desc="缠论选股"):
         try:
-            kline = get_kline(symbol=symbol, end_date=datetime.now(), freq="D", count=1000)
+            kline = get_kline(symbol=symbol, end_date=datetime.now(), freq="30min", count=1000)
             ka = KlineAnalyze(kline, ma_params=(5, 34, 60, 250), bi_mode="new")
 
             if ka.ma[-1]['ma60'] >= ka.latest_price >= ka.ma[-1]['ma250']:
@@ -96,12 +96,29 @@ def selector(symbols: List):
             traceback.print_exc()
     return res
 
+def singal_selector(symbols: List):
+    res = []
+    for symbol in symbols:
+        try:
+            kline = get_kline(symbol=symbol, end_date=datetime.now(), freq="30min", count=1000)
+            ka = KlineAnalyze(kline, ma_params=(5, 34, 60, 250), bi_mode="new")
+
+            if ka.ma[-1]['ma60'] >= ka.latest_price >= ka.ma[-1]['ma250']:
+                type = check_bei_chi(ka.xd_list[-5], ka.xd_list[-4], ka.xd_list[-3], ka.xd_list[-2], ka.xd_list[-1]).get("bc")
+                if type in ["向下趋势背驰", "向下盘整背驰"]:
+                    res.append({"symbol": symbol, "beici": num})
+
+        except:
+            print("{} 分析失败".format(symbol))
+            traceback.print_exc()
+    return res
+
 
 
 def jq_xuangu():
     # 使用聚宽数据在创业板综指上选股
     symbols = get_index_stocks("399006.XSHE")
-    selected = selector(symbols)
+    selected = singal_selector(symbols)
 
     print("选股结果：", selected)
     # df = pd.DataFrame(selected)

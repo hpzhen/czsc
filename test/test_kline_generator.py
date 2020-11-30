@@ -60,3 +60,5 @@ def test_kline_generator():
         assert kg.W[1]['high'] == 3456.97
         assert kg.W[1]['low'] == 3187.84
 
+if __name__ == '__main__':
+    test_kline_generator()
