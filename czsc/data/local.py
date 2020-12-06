@@ -1,5 +1,18 @@
-from QUANTAXIS import DATABASE, datetime
+from QUANTAXIS import DATABASE, datetime, QA_fetch_stock_day_adv
 import pandas as pd
+
+
+
+def get_local_day_kline(symbol, end, start):
+    df = QA_fetch_stock_day_adv(symbol, start=start, end=end).to_pd().reset_index()
+    df.rename({'date': 'dt', 'volume': 'vol', 'code': 'symbol'}, axis=1, inplace=True)
+
+    df = df[['symbol', 'dt', 'open', 'close', 'high', 'low', 'vol']]
+
+    return df
+
+
+
 
 
 def get_local_kline(symbol,  end, freq, start=None, count=None):
@@ -39,5 +52,6 @@ def get_local_kline(symbol,  end, freq, start=None, count=None):
     return res
 
 if __name__ == '__main__':
-    res = get_local_kline(['000001'], "2020-11-30", "30min", start="2020-11-25")
+    # res = get_local_kline(['000001'], "2020-11-30", "30min", start="2020-11-25")
+    res = get_local_day_kline('000001', '2019-12-31', '2019-01-01')
     print(res)
