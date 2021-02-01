@@ -14,6 +14,192 @@ import pandas as pd
 import numpy as np
 from czsc.utils import ka_to_image
 
+def find_zs_enhanced_v1(points, macd_list):
+    """输入笔或线段标记点，输出中枢识别结果"""
+    if len(points) < 6:
+        return []
+    # 当输入为笔的标记点时，新增 xd 值
+    for j, x in enumerate(points):
+        if x.get("bi", 0):
+            points[j]['xd'] = x["bi"]
+
+    def __get_zn(zn_points_):
+        """把与中枢方向一致的次级别走势类型称为Z走势段，按中枢中的时间顺序，
+        分别记为Zn等，而相应的高、低点分别记为gn、dn"""
+        if len(zn_points_) % 2 != 0:
+            zn_points_ = zn_points_[:-1]
+
+        if zn_points_[0]['fx_mark'] == "d":
+            z_direction = "up"
+        else:
+            z_direction = "down"
+
+        zn = []
+        for i in range(0, len(zn_points_), 2):
+            zn_ = {
+                "start_dt": zn_points_[i]['dt'],
+                "end_dt": zn_points_[i + 1]['dt'],
+                "high": max(zn_points_[i]['xd'], zn_points_[i + 1]['xd']),
+                "low": min(zn_points_[i]['xd'], zn_points_[i + 1]['xd']),
+                "direction": z_direction
+            }
+            zn_['mid'] = zn_['low'] + (zn_['high'] - zn_['low']) / 2
+            zn.append(zn_)
+        return zn
+
+    k_xd = []
+    k_xd.copy(points)
+    k_zs = []
+    zs_xd = []
+
+    tmp_zs = {}
+    index = 0
+    start_index = 0
+
+    while len(k_xd) > index:
+        if len(zs_xd) == 0:
+            start_index = index
+        while len(zs_xd) < 6:
+            zs_xd.append(k_xd[start_index])
+            start_index = start_index + 1
+        index = start_index
+        if zs_xd[0]['fx_mark'] == 'd':
+            #向下中枢
+            xd_p = k_xd[index]
+            build_basic_zs_info(zs_xd, tmp_zs)
+            if len(tmp_zs) == 0:
+                continue
+            if xd_p['xd'] > tmp_zs.get('G'):
+                # 线段在中枢上方结束，形成三买
+                tmp_zs['third_buy'] = xd_p
+            elif xd_p['xd'] > tmp_zs.get('D'):
+                # 线段进入中枢内部，形成二买
+                tmp_zs['second_buy'] = xd_p
+            else:
+                #线段跌穿中枢， 形成一买
+                tmp_zs['first_buy'] = xd_p
+        else:
+            #下降趋势
+            xd_p = k_xd[index]
+            build_basic_zs_info(zs_xd, tmp_zs)
+            if len(tmp_zs) == 0:
+                continue
+
+            if xd_p['xd'] > tmp_zs.get('G'):
+                # 线段在中枢上方结束，形成一卖
+                tmp_zs['first_sell'] = xd_p
+            elif xd_p['xd'] > tmp_zs.get('D'):
+                # 线段在中枢内部结束，形成二卖
+                tmp_zs['second_sell'] = xd_p
+            else:
+                #在中枢下方， 形成三卖
+                tmp_zs['third_sell'] = xd_p
+
+        fds = get_fd_from_points(zs_xd, macd_list)
+        tmp_zs['bei_chi'] = check_bei_chi(fds[0], fds[1], fds[2], fds[3], fds[4])
+        zs_xd.append(tmp_zs)
+        tmp_zs.clear()
+
+
+def build_basic_zs_info(zs_xd, tmp_zs):
+    def __get_zn(zn_points_):
+        """把与中枢方向一致的次级别走势类型称为Z走势段，按中枢中的时间顺序，
+        分别记为Zn等，而相应的高、低点分别记为gn、dn"""
+        if len(zn_points_) % 2 != 0:
+            zn_points_ = zn_points_[:-1]
+
+        if zn_points_[0]['fx_mark'] == "d":
+            z_direction = "up"
+        else:
+            z_direction = "down"
+
+        zn = []
+        for i in range(0, len(zn_points_), 2):
+            zn_ = {
+                "start_dt": zn_points_[i]['dt'],
+                "end_dt": zn_points_[i + 1]['dt'],
+                "high": max(zn_points_[i]['xd'], zn_points_[i + 1]['xd']),
+                "low": min(zn_points_[i]['xd'], zn_points_[i + 1]['xd']),
+                "direction": z_direction
+            }
+            zn_['mid'] = zn_['low'] + (zn_['high'] - zn_['low']) / 2
+            zn.append(zn_)
+        return zn
+    zs_d = max([x['xd'] for x in zs_xd[1:-2] if x['fx_mark'] == 'd'])
+    zs_g = min([x['xd'] for x in zs_xd[1:-2] if x['fx_mark'] == 'g'])
+    if zs_g <= zs_d:
+        zs_xd.pop(0)
+        return
+    # 定义四个指标,GG=max(gn),G=min(gn),D=max(dn),DD=min(dn)，n遍历中枢中所有Zn。
+    # 定义ZG=min(g1、g2), ZD=max(d1、d2)，显然，[ZD，ZG]就是缠中说禅走势中枢的区间
+    tmp_zs = {
+        'ZD': zs_d,
+        "ZG": zs_g,
+        'G': min([x['xd'] for x in zs_xd if x['fx_mark'] == 'g']),
+        'GG': max([x['xd'] for x in zs_xd if x['fx_mark'] == 'g']),
+        'D': max([x['xd'] for x in zs_xd if x['fx_mark'] == 'd']),
+        'DD': min([x['xd'] for x in zs_xd if x['fx_mark'] == 'd']),
+        'start_point': zs_xd[1],
+        'end_point': zs_xd[-2],
+        "zn": __get_zn(zs_xd),
+        "points": zs_xd,
+    }
+
+
+def get_fd_from_points(points, macd_list):
+    fds = []
+    if len(points) != 6:
+        return fds
+    else:
+        for i in range(len(points)-1):
+            fds.append(construct_fd(points[i-1], points[i], macd_list))
+        return fds
+
+def construct_fd(start_point, end_point,  macd_list):
+    direction = "up" if start_point['xd'] < end_point['xd'] else "down"
+    high = start_point['dt'] if direction == "down" else end_point['dt']
+    low = start_point['dt'] if direction == "up" else end_point['dt']
+    mode = 'bi'
+    power = calculate_macd_power(macd_list, start_dt=start_point['dt'], end_dt=end_point['dt'], direction=direction)
+    return {
+        "start_dt": start_point['dt'],
+        "end_dt": end_point['dt'],
+        "direction": direction,
+        "high": high,
+        "low": low,
+        "mode": mode,
+        "power": power
+    }
+
+def calculate_macd_power(macd_list, start_dt, end_dt, mode='bi', direction="up"):
+    """用 MACD 计算走势段（start_dt ~ end_dt）的力度
+
+    :param start_dt: datetime
+        走势开始时间
+    :param end_dt: datetime
+        走势结束时间
+    :param mode: str
+        分段走势类型，默认值为 bi，可选值 ['bi', 'xd']，分别表示笔分段走势和线段分段走势
+    :param direction: str
+        线段分段走势计算力度需要指明方向，可选值 ['up', 'down']
+    :return: float
+        走势力度
+    """
+    fd_macd = [x for x in macd_list if end_dt >= x['dt'] >= start_dt]
+
+    if mode == 'bi':
+        power = sum([abs(x['macd']) for x in fd_macd])
+    elif mode == 'xd':
+        if direction == 'up':
+            power = sum([abs(x['macd']) for x in fd_macd if x['macd'] > 0])
+        elif direction == 'down':
+            power = sum([abs(x['macd']) for x in fd_macd if x['macd'] < 0])
+        else:
+            raise ValueError
+    else:
+        raise ValueError
+    return power
+
 def find_zs(points):
     """输入笔或线段标记点，输出中枢识别结果"""
     if len(points) < 5:
