@@ -9,8 +9,8 @@ from czsc.data.local import get_local_kline, get_local_day_kline
 
 
 def test_use_local_data():
-    kline = get_local_kline(symbol=['300494'], end='2020-04-31', freq='5min', start='2019-01-01')
-    # kline = get_local_day_kline('300494', end='2020-12-31', start='2019-01-01')
+    # kline = get_local_kline(symbol=['300494'], end='2020-04-31', freq='5min', start='2019-01-01')
+    kline = get_local_day_kline('300494', end='2020-12-31', start='2019-01-01')
 
     ka = KlineAnalyze(kline, name="1min", verbose=False)
     print("分型识别结果：", ka.fx_list[-3:])

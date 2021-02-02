@@ -47,8 +47,8 @@ def find_zs_enhanced_v1(points, macd_list):
             zn.append(zn_)
         return zn
 
-    k_xd = []
-    k_xd.copy(points)
+    k_xd = points.copy()
+    # k_xd.copy(points)
     k_zs = []
     zs_xd = []
 
@@ -97,8 +97,9 @@ def find_zs_enhanced_v1(points, macd_list):
 
         fds = get_fd_from_points(zs_xd, macd_list)
         tmp_zs['bei_chi'] = check_bei_chi(fds[0], fds[1], fds[2], fds[3], fds[4])
-        zs_xd.append(tmp_zs)
+        k_zs.append(tmp_zs)
         tmp_zs.clear()
+        zs_xd.clear()
 
 
 def build_basic_zs_info(zs_xd, tmp_zs):
@@ -125,14 +126,14 @@ def build_basic_zs_info(zs_xd, tmp_zs):
             zn_['mid'] = zn_['low'] + (zn_['high'] - zn_['low']) / 2
             zn.append(zn_)
         return zn
-    zs_d = max([x['xd'] for x in zs_xd[1:-2] if x['fx_mark'] == 'd'])
-    zs_g = min([x['xd'] for x in zs_xd[1:-2] if x['fx_mark'] == 'g'])
+    zs_d = max([x['xd'] for x in zs_xd[1:5] if x['fx_mark'] == 'd'])
+    zs_g = min([x['xd'] for x in zs_xd[1:5] if x['fx_mark'] == 'g'])
     if zs_g <= zs_d:
         zs_xd.pop(0)
         return
     # 定义四个指标,GG=max(gn),G=min(gn),D=max(dn),DD=min(dn)，n遍历中枢中所有Zn。
     # 定义ZG=min(g1、g2), ZD=max(d1、d2)，显然，[ZD，ZG]就是缠中说禅走势中枢的区间
-    tmp_zs = {
+    tmp_zs.update({
         'ZD': zs_d,
         "ZG": zs_g,
         'G': min([x['xd'] for x in zs_xd if x['fx_mark'] == 'g']),
@@ -143,7 +144,7 @@ def build_basic_zs_info(zs_xd, tmp_zs):
         'end_point': zs_xd[-2],
         "zn": __get_zn(zs_xd),
         "points": zs_xd,
-    }
+    })
 
 
 def get_fd_from_points(points, macd_list):
