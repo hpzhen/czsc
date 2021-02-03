@@ -22,31 +22,6 @@ def find_zs_enhanced_v1(points, macd_list):
     for j, x in enumerate(points):
         if x.get("bi", 0):
             points[j]['xd'] = x["bi"]
-
-    def __get_zn(zn_points_):
-        """把与中枢方向一致的次级别走势类型称为Z走势段，按中枢中的时间顺序，
-        分别记为Zn等，而相应的高、低点分别记为gn、dn"""
-        if len(zn_points_) % 2 != 0:
-            zn_points_ = zn_points_[:-1]
-
-        if zn_points_[0]['fx_mark'] == "d":
-            z_direction = "up"
-        else:
-            z_direction = "down"
-
-        zn = []
-        for i in range(0, len(zn_points_), 2):
-            zn_ = {
-                "start_dt": zn_points_[i]['dt'],
-                "end_dt": zn_points_[i + 1]['dt'],
-                "high": max(zn_points_[i]['xd'], zn_points_[i + 1]['xd']),
-                "low": min(zn_points_[i]['xd'], zn_points_[i + 1]['xd']),
-                "direction": z_direction
-            }
-            zn_['mid'] = zn_['low'] + (zn_['high'] - zn_['low']) / 2
-            zn.append(zn_)
-        return zn
-
     k_xd = points.copy()
     # k_xd.copy(points)
     k_zs = []
@@ -54,20 +29,24 @@ def find_zs_enhanced_v1(points, macd_list):
 
     tmp_zs = {}
     index = 0
-    start_index = 0
+    rolling_index = 0
 
     while len(k_xd) > index:
         if len(zs_xd) == 0:
-            start_index = index
-        while len(zs_xd) < 6:
-            zs_xd.append(k_xd[start_index])
-            start_index = start_index + 1
-        index = start_index
+            rolling_index = index
+        while len(zs_xd) < 6 and rolling_index < len(k_xd)-1:
+            zs_xd.append(k_xd[rolling_index])
+            rolling_index = rolling_index + 1
+
+        if len(zs_xd) < 6:
+            break
+        index = index + 1
         if zs_xd[0]['fx_mark'] == 'd':
             #向下中枢
-            xd_p = k_xd[index]
+            xd_p = k_xd[rolling_index]
             build_basic_zs_info(zs_xd, tmp_zs)
             if len(tmp_zs) == 0:
+                zs_xd.clear()
                 continue
             if xd_p['xd'] > tmp_zs.get('G'):
                 # 线段在中枢上方结束，形成三买
@@ -83,6 +62,7 @@ def find_zs_enhanced_v1(points, macd_list):
             xd_p = k_xd[index]
             build_basic_zs_info(zs_xd, tmp_zs)
             if len(tmp_zs) == 0:
+                zs_xd.clear()
                 continue
 
             if xd_p['xd'] > tmp_zs.get('G'):
@@ -97,18 +77,16 @@ def find_zs_enhanced_v1(points, macd_list):
 
         fds = get_fd_from_points(zs_xd, macd_list)
         tmp_zs['bei_chi'] = check_bei_chi(fds[0], fds[1], fds[2], fds[3], fds[4])
-        k_zs.append(tmp_zs)
+        k_zs.append(tmp_zs.copy())
         tmp_zs.clear()
         zs_xd.clear()
+    return k_zs
 
 
 def build_basic_zs_info(zs_xd, tmp_zs):
     def __get_zn(zn_points_):
         """把与中枢方向一致的次级别走势类型称为Z走势段，按中枢中的时间顺序，
         分别记为Zn等，而相应的高、低点分别记为gn、dn"""
-        if len(zn_points_) % 2 != 0:
-            zn_points_ = zn_points_[:-1]
-
         if zn_points_[0]['fx_mark'] == "d":
             z_direction = "up"
         else:
@@ -153,7 +131,7 @@ def get_fd_from_points(points, macd_list):
         return fds
     else:
         for i in range(len(points)-1):
-            fds.append(construct_fd(points[i-1], points[i], macd_list))
+            fds.append(construct_fd(points[i], points[i+1], macd_list))
         return fds
 
 def construct_fd(start_point, end_point,  macd_list):
