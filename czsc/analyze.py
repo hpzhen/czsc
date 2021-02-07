@@ -76,7 +76,16 @@ def find_zs_enhanced_v1(points, macd_list):
                 tmp_zs['third_sell'] = xd_p
 
         fds = get_fd_from_points(zs_xd, macd_list)
-        tmp_zs['bei_chi'] = check_bei_chi(fds[0], fds[1], fds[2], fds[3], fds[4])
+
+        # bei_chi_judge = {
+        #     'dt': zs_xd[6]['dt'],
+        #     'bei_chi_type':  check_bei_chi(fds[0], fds[1], fds[2], fds[3], fds[4])
+        # }
+
+        tmp_zs['bei_chi'] = {
+            'dt': fds[4]['end_dt'],
+            'bei_chi_type':  check_bei_chi(fds[0], fds[1], fds[2], fds[3], fds[4])
+        }
         k_zs.append(tmp_zs.copy())
         tmp_zs.clear()
         zs_xd.clear()

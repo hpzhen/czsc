@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from .plot import kline_pro
 
 
-def ka_to_image(ka, file_image, mav=(5, 20, 120, 250), max_k_count=1000, dpi=50):
+def ka_to_image(ka, file_image, mav=(5, 20, 120, 250), max_k_count=10000, dpi=50):
     """绘制 ka，保存到 file_image"""
     df = ka.to_df(use_macd=True, ma_params=(5, 20,), max_count=max_k_count)
     df.rename({"open": "Open", "close": "Close", "high": "High",
