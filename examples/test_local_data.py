@@ -12,7 +12,7 @@ from czsc.data.local import get_local_kline, get_local_day_kline
 
 def test_use_local_data():
     # kline = get_local_kline(symbol=['300494'], end='2020-04-31', freq='5min', start='2019-01-01')
-    kline = get_local_day_kline('000001', end='2020-12-31', start='2019-01-01')
+    kline = get_local_day_kline('300087', end='2020-12-31', start='2019-01-01')
 
     ka = KlineAnalyze(kline, name="1min", verbose=False)
     print("分型识别结果：", ka.fx_list[-3:])
@@ -37,11 +37,16 @@ def test_use_local_data():
     first_buy = json_normalize(first_buy)
     first_buy['type'] = 1
 
+    # third_bs = jsonpath.jsonpath(zx, '$..third_bs_section')
+    # third_bs = json_normalize(third_bs)
+    # third_bs.set_index('dt', inplace=True)
+
 
     dfs = [first_buy, second_buy, third_buy]
     points = reduce(lambda left, right: pd.concat([left, right], axis=0, join='outer'), dfs)
     points = pd.DataFrame(points).set_index('dt').sort_index()
     points = pd.concat([points, bei_chi], axis=1, join='outer')
+    # points = pd.concat([points, third_bs], axis=1, join='outer')
 
     kline = pd.DataFrame(kline).set_index(['dt'])
     result = pd.concat([kline, points], axis=1, join='outer').reset_index()

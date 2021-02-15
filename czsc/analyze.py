@@ -84,8 +84,16 @@ def find_zs_enhanced_v1(points, macd_list):
 
         tmp_zs['bei_chi'] = {
             'dt': fds[4]['end_dt'],
+            'direction': fds[0]['direction'],
             'bei_chi_type':  check_bei_chi(fds[0], fds[1], fds[2], fds[3], fds[4])
         }
+
+        # tmp_zs['third_bs_section'] = {
+        #     'dt': fds[4]['end_dt'],
+        #     'direction': fds[0]['direction'],
+        #     'third_bs_judgement': check_third_bs(fds[0], fds[1], fds[2], fds[3], fds[4])
+        # }
+
         k_zs.append(tmp_zs.copy())
         tmp_zs.clear()
         zs_xd.clear()
@@ -143,11 +151,10 @@ def get_fd_from_points(points, macd_list):
             fds.append(construct_fd(points[i], points[i+1], macd_list))
         return fds
 
-def construct_fd(start_point, end_point,  macd_list):
+def construct_fd(start_point, end_point,  macd_list, mode='bi'):
     direction = "up" if start_point['xd'] < end_point['xd'] else "down"
-    high = start_point['dt'] if direction == "down" else end_point['dt']
-    low = start_point['dt'] if direction == "up" else end_point['dt']
-    mode = 'bi'
+    high = start_point['xd'] if direction == "down" else end_point['xd']
+    low = start_point['xd'] if direction == "up" else end_point['xd']
     power = calculate_macd_power(macd_list, start_dt=start_point['dt'], end_dt=end_point['dt'], direction=direction)
     return {
         "start_dt": start_point['dt'],
