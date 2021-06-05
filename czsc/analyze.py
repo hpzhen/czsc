@@ -142,21 +142,28 @@ def build_basic_zs_info(zs_xd, tmp_zs):
     })
 
 
-def get_fd_from_points(points, macd_list):
+def get_fd_from_points(points, macd_list, symbol=None):
     fds = []
-    if len(points) != 6:
-        return fds
-    else:
-        for i in range(len(points)-1):
-            fds.append(construct_fd(points[i], points[i+1], macd_list))
-        return fds
+    # if len(points) != 6:
+    #     return fds
+    # else:
+    for i in range(len(points)-1):
+        fds.append(construct_fd(points[i], points[i+1], macd_list, symbol=symbol))
+    return fds
 
-def construct_fd(start_point, end_point,  macd_list, mode='bi'):
-    direction = "up" if start_point['xd'] < end_point['xd'] else "down"
-    high = start_point['xd'] if direction == "down" else end_point['xd']
-    low = start_point['xd'] if direction == "up" else end_point['xd']
+def construct_fd(start_point, end_point,  macd_list, mode='bi', symbol = None):
+    if mode == 'xd':
+        direction = "up" if start_point['xd'] < end_point['xd'] else "down"
+        high = start_point['xd'] if direction == "down" else end_point['xd']
+        low = start_point['xd'] if direction == "up" else end_point['xd']
+    elif mode == 'bi':
+        direction = "up" if start_point['bi'] < end_point['bi'] else "down"
+        high = start_point['bi'] if direction == "down" else end_point['bi']
+        low = start_point['bi'] if direction == "up" else end_point['bi']
+
     power = calculate_macd_power(macd_list, start_dt=start_point['dt'], end_dt=end_point['dt'], direction=direction)
     return {
+        'symbol': symbol,
         "start_dt": start_point['dt'],
         "end_dt": end_point['dt'],
         "direction": direction,
