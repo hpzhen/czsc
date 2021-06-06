@@ -9,6 +9,7 @@ class TrendAnalyser:
         self.__input_fds = fds
         self.__macd_list = macd_list
         self._tmp_fds = []
+        self.__construct_zoushi()
 
     def __check_trend_beichi(self, fds=None):
         if fds is None:
@@ -27,18 +28,21 @@ class TrendAnalyser:
     def __judge_more_than_3fds_zoushi(self):
         zoushi = {}
         direction = self._tmp_fds[0]['direction']
+        fd_high = max(self._tmp_fds[0]['high'], self._tmp_fds[2]['high'])
+        fd_low = min(self._tmp_fds[-1]['low'], self._tmp_fds[-2]['low'])
 
         if direction == 'down':
             zoushi = {'走势': '向下',
                       '类型': '下跌',
                       'symbol': self._tmp_fds[0]['symbol'],
-                      'start_time': self._tmp_fds[0]['start_dt'],
-                      'end_time': self._tmp_fds[-1]['end_dt'],
+                      'start_dt': self._tmp_fds[0]['start_dt'],
+                      'end_dt': self._tmp_fds[-1]['end_dt'],
                       'section_amount': len(self._tmp_fds),
                       'zs_high': min(self._tmp_fds[-3]['high'], self._tmp_fds[-1]['high']),
                       'zs_low': max(self._tmp_fds[-1]['low'], self._tmp_fds[-2]['low']),
-                      'high': max(self._tmp_fds[0]['high'], self._tmp_fds[1]['high']),
-                      'low': min(self._tmp_fds[-1]['low'], self._tmp_fds[-2]['low']),
+                      'high': fd_high,
+                      'low': fd_low,
+                      'direction': 'up' if fd_high > fd_low else 'down',
                       'power': calculate_macd_power(self.__macd_list, self._tmp_fds[0]['start_dt'],
                                                     self._tmp_fds[-1]['end_dt'], mode='xd',
                                                     direction=direction),
@@ -47,13 +51,14 @@ class TrendAnalyser:
             zoushi = {'走势': '向上',
                       '类型': '上涨',
                       'symbol': self._tmp_fds[0]['symbol'],
-                      'start_time': self._tmp_fds[0]['start_dt'],
-                      'end_time': self._tmp_fds[-1]['end_dt'],
+                      'start_dt': self._tmp_fds[0]['start_dt'],
+                      'end_dt': self._tmp_fds[-1]['end_dt'],
                       'section_amount': len(self._tmp_fds),
                       'zs_high': min(self._tmp_fds[-1]['high'], self._tmp_fds[-3]['high']),
                       'zs_low': max(self._tmp_fds[-3]['low'], self._tmp_fds[-2]['low']),
-                      'high': max(self._tmp_fds[-1]['high'], self._tmp_fds[-2]['high']),
-                      'low': min(self._tmp_fds[1]['low'], self._tmp_fds[0]['low']),
+                      'high': fd_high,
+                      'low': fd_low,
+                      'direction': 'up' if fd_high > fd_low else 'down',
                       'power': calculate_macd_power(self.__macd_list, self._tmp_fds[0]['start_dt'],
                                                     self._tmp_fds[-1]['end_dt'], mode='xd',
                                                     direction=direction),
@@ -65,6 +70,8 @@ class TrendAnalyser:
         zoushi = {}
 
         direction = self._tmp_fds[0]['direction']
+        fd_high = max(self._tmp_fds[0]['high'], self._tmp_fds[2]['high'])
+        fd_low = min(self._tmp_fds[0]['low'], self._tmp_fds[2]['low'])
 
         if direction == 'down':
             if self._tmp_fds[0]['high'] > self._tmp_fds[1]['high'] * self.__exceedRatio or self._tmp_fds[0]['low'] > \
@@ -72,13 +79,14 @@ class TrendAnalyser:
                 zoushi = {'走势': '向下盘整',
                           '类型': '下跌',
                           'symbol': self._tmp_fds[0]['symbol'],
-                          'start_time': self._tmp_fds[0]['start_dt'],
-                          'end_time': self._tmp_fds[2]['end_dt'],
+                          'start_dt': self._tmp_fds[0]['start_dt'],
+                          'end_dt': self._tmp_fds[2]['end_dt'],
                           'section_amount': len(self._tmp_fds),
                           'zs_high': min(self._tmp_fds[0]['high'], self._tmp_fds[1]['high']),
                           'zs_low': max(self._tmp_fds[1]['low'], self._tmp_fds[2]['low']),
-                          'high': max(self._tmp_fds[0]['high'], self._tmp_fds[1]['high']),
-                          'low': min(self._tmp_fds[1]['low'], self._tmp_fds[2]['low']),
+                          'high': fd_high,
+                          'low': fd_low,
+                          'direction': 'up' if fd_high > fd_low else 'down',
                           'power': calculate_macd_power(self.__macd_list, self._tmp_fds[0]['start_dt'],
                                                         self._tmp_fds[-1]['end_dt'], mode='xd', direction=direction),
                           'beichi': self.__check_trend_beichi()}
@@ -86,13 +94,14 @@ class TrendAnalyser:
                 zoushi = {'走势': '向下盘整',
                           '类型': '盘整',
                           'symbol': self._tmp_fds[0]['symbol'],
-                          'start_time': self._tmp_fds[0]['start_dt'],
-                          'end_time': self._tmp_fds[2]['end_dt'],
+                          'start_dt': self._tmp_fds[0]['start_dt'],
+                          'end_dt': self._tmp_fds[2]['end_dt'],
                           'section_amount': len(self._tmp_fds),
                           'zs_high': min(self._tmp_fds[0]['high'], self._tmp_fds[1]['high']),
                           'zs_low': max(self._tmp_fds[1]['low'], self._tmp_fds[2]['low']),
-                          'high': max(self._tmp_fds[0]['high'], self._tmp_fds[1]['high']),
-                          'low': min(self._tmp_fds[1]['low'], self._tmp_fds[2]['low']),
+                          'high': fd_high,
+                          'low': fd_low,
+                          'direction': 'up' if fd_high > fd_low else 'down',
                           'power': calculate_macd_power(self.__macd_list, self._tmp_fds[0]['start_dt'],
                                                         self._tmp_fds[-1]['end_dt'], mode='xd', direction=direction),
                           'beichi': self.__check_trend_beichi()}
@@ -102,13 +111,14 @@ class TrendAnalyser:
                 zoushi = {'走势': '向上盘整',
                           '类型': '上涨',
                           'symbol': self._tmp_fds[0]['symbol'],
-                          'start_time': self._tmp_fds[0]['start_dt'],
-                          'end_time': self._tmp_fds[2]['end_dt'],
+                          'start_dt': self._tmp_fds[0]['start_dt'],
+                          'end_dt': self._tmp_fds[2]['end_dt'],
                           'section_amount': len(self._tmp_fds),
                           'zs_high': min(self._tmp_fds[1]['high'], self._tmp_fds[2]['high']),
                           'zs_low': max(self._tmp_fds[0]['low'], self._tmp_fds[1]['low']),
-                          'high': max(self._tmp_fds[0]['high'], self._tmp_fds[1]['high']),
-                          'low': min(self._tmp_fds[1]['low'], self._tmp_fds[2]['low']),
+                          'high': fd_high,
+                          'low': fd_low,
+                          'direction': 'up' if fd_high > fd_low else 'down',
                           'power': calculate_macd_power(self.__macd_list, self._tmp_fds[0]['start_dt'],
                                                         self._tmp_fds[-1]['end_dt'], mode='xd', direction=direction),
                           'beichi': self.__check_trend_beichi()}
@@ -116,13 +126,14 @@ class TrendAnalyser:
                 zoushi = {'走势': '向上盘整',
                           '类型': '盘整',
                           'symbol': self._tmp_fds[0]['symbol'],
-                          'start_time': self._tmp_fds[0]['start_dt'],
-                          'end_time': self._tmp_fds[2]['end_dt'],
+                          'start_dt': self._tmp_fds[0]['start_dt'],
+                          'end_dt': self._tmp_fds[2]['end_dt'],
                           'section_amount': len(self._tmp_fds),
                           'zs_high': min(self._tmp_fds[0]['high'], self._tmp_fds[1]['high']),
                           'zs_low': max(self._tmp_fds[1]['low'], self._tmp_fds[2]['low']),
-                          'high': max(self._tmp_fds[0]['high'], self._tmp_fds[1]['high']),
-                          'low': min(self._tmp_fds[1]['low'], self._tmp_fds[2]['low']),
+                          'high': fd_high,
+                          'low': fd_low,
+                          'direction': 'up' if fd_high > fd_low else 'down',
                           'power': calculate_macd_power(self.__macd_list, self._tmp_fds[0]['start_dt'],
                                                         self._tmp_fds[-1]['end_dt'], mode='xd', direction=direction),
                           'beichi': self.__check_trend_beichi()}
@@ -212,7 +223,9 @@ class TrendAnalyser:
                       'symbol': self.__zoushi_list[-1]['symbol']}
         return result
 
+    def get_zoushi_list(self):
+        return self.__zoushi_list
+
 
     def getAnalysisResult(self):
-        self.__construct_zoushi()
         return self._judge_buy_or_sell_points()
