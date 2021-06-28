@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import warnings
+import sys
 
 try:
     import talib as ta
@@ -571,8 +572,11 @@ def check_bei_chi(fd1, fd2, fd3, fd4, fd5):
     }
 
     """
-    assert fd1['direction'] == fd3['direction'] == fd5['direction']
-    assert fd2['direction'] == fd4['direction']
+    try:
+        assert fd1['direction'] == fd3['direction'] == fd5['direction']
+        assert fd2['direction'] == fd4['direction']
+    except:
+        print("assert failed: " + sys._getframe().f_code.co_name)
     direction = fd1['direction']
 
     zs_g = min(fd2['high'], fd3['high'], fd4['high'])
