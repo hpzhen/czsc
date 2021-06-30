@@ -349,7 +349,10 @@ class EnhancedTrendAnalyser:
                 self.__zoushi_list.append(self.__construct_single_up_or_down_zoushi(self._tmp_fds))
 
     def get_zoushi_list(self):
-        return self.__zoushi_list
+        return self.__zoushi_list.copy()
+
+    def get_tmp_list(self):
+        return self._tmp_fds.copy()
 
     def getAnalysisResult(self):
         return self._judge_buy_or_sell_points()

@@ -4,6 +4,8 @@ from functools import reduce
 import jsonpath
 from pandas.io.json import json_normalize
 import pandas as pd
+import numpy as np
+import random
 import QUANTAXIS as QA
 
 from czsc import KlineAnalyze, find_zs
@@ -90,16 +92,21 @@ def test_use_local_data():
 
 
 def test_chanlun():
-    # code_list = QA.QA_fetch_stock_list().code.unique().tolist()
+    code_list = QA.QA_fetch_get_stock_list('tdx').code.unique().tolist()[10:20]
     # for code in code_list[:20]:
     #     analysis(symbol=code)
-    enhanced_analysis(symbol='300182')
+    input_code = random.sample(code_list, 3)
+    start = '2020-07-01'
+    end = '2021-02-22'
+    for code in code_list:
+        enhanced_analysis(symbol=code, start_date=start, end_date=end)
     # analysis(symbol='300118')
     # level_2_analysis(symbol='300118')
     # level_1_analysis(symbol='300118')
 
+
 def level_1_analysis(symbol=None):
-    end_date = '2021-05-20'
+    end_date = '2021-02-05'
     start_date = '2020-10-11'
     kline_day = get_local_day_kline(symbol, end_date, start_date)
     ka_day = KlineAnalyze(kline_day, name="30min", verbose=False)
@@ -110,7 +117,6 @@ def level_1_analysis(symbol=None):
     ta_day = TrendAnalyser(fds, tig_day.macd)
 
     print(ta_day.getAnalysisResult())
-
 
 
 def level_2_analysis(symbol=None):
@@ -133,9 +139,7 @@ def level_2_analysis(symbol=None):
     print(ta_30m.getAnalysisResult())
 
 
-def enhanced_analysis(symbol=None):
-    end_date = '2021-03-15'
-    start_date = '2020-05-20'
+def enhanced_analysis(symbol=None, start_date='2020-05-20', end_date='2021-02-22'):
     kline_1min = get_local_kline(symbol=[symbol], end=end_date, freq='1min', start=start_date)
     kline_5min = get_local_kline(symbol=[symbol], end=end_date, freq='5min', start=start_date)
     kline_30min = get_local_kline(symbol=[symbol], end=end_date, freq='30min', start=start_date)
@@ -155,10 +159,18 @@ def enhanced_analysis(symbol=None):
     ta_30m = EnhancedTrendAnalyser(ta_5m.get_zoushi_list(), tig_30m.macd)
     ta_day = EnhancedTrendAnalyser(ta_30m.get_zoushi_list(), tig_day.macd)
 
-    print("result is:")
-    print(ta_day.getAnalysisResult())
+    judge_No1_buy_points(ta_day, ta_30m)
 
 
+def judge_No1_buy_points(ta_day: EnhancedTrendAnalyser, ta_30m: EnhancedTrendAnalyser):
+    if ta_day.get_zoushi_list()[-1]['direction'] == 'down' \
+            and ta_day.get_tmp_list().__len__() == 0 \
+            and ta_30m.get_zoushi_list()[-1]['direction'] == 'down' \
+            and ta_30m.get_tmp_list().__len__() == 0:
+        result = {'买点类型': '第一买点',
+                  '股票代码': ta_day.get_zoushi_list()[-1]['symbol'],
+                  '时间': ta_day.get_zoushi_list()[-1]['end_dt']}
+        print(result)
 
 
 def analysis(symbol=None):
@@ -194,9 +206,16 @@ def test_pop():
 
     alist.update(blist)
 
-    print("file:line  " + sys._getframe().f_code.co_filename+ ":" + str(sys._getframe().f_lineno))
+    print("file:line  " + sys._getframe().f_code.co_filename + ":" + str(sys._getframe().f_lineno))
 
     print(alist)
+
+
+def test_random_fetchdata():
+    ar = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    result = random.sample(ar, 3)
+    print(result)
 
 
 if __name__ == '__main__':
