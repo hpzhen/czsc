@@ -90,15 +90,22 @@ def test_use_local_data():
     # 用图片或者HTML可视化
     ka_1min.to_image("test.png")
 
+def test_single_stock_chanlun():
+    start = '2020-08-01'
+    end = '2021-01-18'
+    code = '002557'
+    enhanced_analysis(symbol=code, start_date=start, end_date=end)
+
 
 def test_chanlun():
-    code_list = QA.QA_fetch_get_stock_list('tdx').code.unique().tolist()[10:20]
+    code_list = QA.QA_fetch_get_stock_list('tdx').code.unique().tolist()[1000:1150]
     # for code in code_list[:20]:
     #     analysis(symbol=code)
     input_code = random.sample(code_list, 3)
     start = '2020-07-01'
-    end = '2021-02-22'
+    end = '2021-02-23'
     for code in code_list:
+        print(code)
         enhanced_analysis(symbol=code, start_date=start, end_date=end)
     # analysis(symbol='300118')
     # level_2_analysis(symbol='300118')
@@ -159,18 +166,33 @@ def enhanced_analysis(symbol=None, start_date='2020-05-20', end_date='2021-02-22
     ta_30m = EnhancedTrendAnalyser(ta_5m.get_zoushi_list(), tig_30m.macd)
     ta_day = EnhancedTrendAnalyser(ta_30m.get_zoushi_list(), tig_day.macd)
 
-    judge_No1_buy_points(ta_day, ta_30m)
+    judge_No2_buy_point(ta_day, ta_30m, end=end_date)
 
 
-def judge_No1_buy_points(ta_day: EnhancedTrendAnalyser, ta_30m: EnhancedTrendAnalyser):
+def judge_No1_buy_points(ta_day: EnhancedTrendAnalyser, ta_30m: EnhancedTrendAnalyser, end=None):
     if ta_day.get_zoushi_list()[-1]['direction'] == 'down' \
             and ta_day.get_tmp_list().__len__() == 0 \
             and ta_30m.get_zoushi_list()[-1]['direction'] == 'down' \
-            and ta_30m.get_tmp_list().__len__() == 0:
+            and ta_30m.get_tmp_list().__len__() == 0 \
+            and ta_day.get_zoushi_list()[-1]['end_dt'].strftime('%Y-%m-%d') == end \
+            and ta_30m.get_zoushi_list()[-1]['end_dt'].strftime('%Y-%m-%d') == end:
         result = {'买点类型': '第一买点',
                   '股票代码': ta_day.get_zoushi_list()[-1]['symbol'],
                   '时间': ta_day.get_zoushi_list()[-1]['end_dt']}
         print(result)
+
+
+def judge_No2_buy_point(ta_day: EnhancedTrendAnalyser, ta_30m: EnhancedTrendAnalyser, end=None):
+
+    if len(ta_30m.get_tmp_list()) == 0:
+        if len(ta_day.get_tmp_list()) == 1 \
+                and ta_day.get_tmp_list()[-1]['end_dt'].strftime('%Y-%m-%d') == end \
+                and ta_day.get_tmp_list()[-1]['direction'] == 'down':
+            result = {'买点类型': '第二买点',
+                      '股票代码': ta_day.get_zoushi_list()[-1]['symbol'],
+                      '时间': ta_day.get_tmp_list()[-1]['end_dt']}
+            print(result)
+
 
 
 def analysis(symbol=None):
@@ -221,3 +243,4 @@ def test_random_fetchdata():
 if __name__ == '__main__':
     # test_use_local_data()
     test_chanlun()
+    # test_single_stock_chanlun()
